@@ -173,7 +173,8 @@ if __name__ == '__main__':
             print(f'Running on policy: {args.policy}')
         else:
             print(f'No policy specified. Running on all policies. Total policies: {len(policies.get("policies", []))}')
-        output_file = 'antimalware_settings.csv'
+        output_file   = 'antimalware_settings.csv'
+        module_summary = []
 
         with open(output_file, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -182,6 +183,18 @@ if __name__ == '__main__':
             for p in policies.get('policies', []):
                 name = p.get('name', 'N/A')
                 am   = p.get('antiMalware', {})
+
+                # --- Collect Module Status for summary ---
+                modules = [
+                    'antiMalware', 'webReputation', 'firewall', 'intrusionPrevention',
+                    'integrityMonitoring', 'logInspection', 'applicationControl',
+                    'deviceControl', 'activityMonitoring', 'SAP'
+                ]
+                module_summary.append({
+                    'policy': name,
+                    **{mod: p.get(mod, {}).get('moduleStatus', {}).get('status', 'N/A')
+                       for mod in modules}
+                })
 
                 # --- Simple/nested AM fields (state, moduleStatus, directory settings) ---
                 for key, val in am.items():
@@ -206,6 +219,21 @@ if __name__ == '__main__':
                         print(f'{name} | realTimeScanScheduleID → {sched_r.json().get("name")}')
                     else:
                         print(f'{name} | realTimeScanScheduleID Error: {sched_r.status_code}')
+
+        # --- Module Status Summary CSV ---
+        if module_summary:
+            summary_file = 'module_status_summary.csv'
+            all_modules  = sorted({mod for row in module_summary for mod in row if mod != 'policy'})
+            with open(summary_file, 'w', newline='') as sf:
+                summary_writer = csv.writer(sf)
+                summary_writer.writerow(['Policy'] + all_modules)
+                for row in module_summary:
+                    summary_writer.writerow([row['policy']] + [row.get(m, 'N/A') for m in all_modules])
+            print(f'\nModule Status Summary:')
+            print(','.join(['Policy'] + all_modules))
+            for row in module_summary:
+                print(','.join([row['policy']] + [row.get(m, 'N/A') for m in all_modules]))
+            print(f'\nModule status summary saved to {summary_file}')
 
         print(f'\nDone — saved to {output_file}')
     else:
