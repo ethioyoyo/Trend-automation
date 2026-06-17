@@ -1,0 +1,38 @@
+name: TMAS Scan (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      region:
+        required: false
+        type: string
+        default: 'us-east-1'
+    secrets:
+      TMAS_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  tmas-scan:
+    name: TMAS Repo Scan
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: repo-name
+
+      - name: Scan repo for vulnerabilities and secrets
+        uses: trendmicro/tmas-scan-action@v3
+        with:
+          version: '3'
+          vulnerabilitiesScan: true
+          malwareScan: false
+          secretsScan: true
+          artifact: dir:./repo-name
+          additionalArgs: --region=${{ inputs.region }}
+          tmasApiKey: ${{ secrets.TMAS_API_KEY }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
