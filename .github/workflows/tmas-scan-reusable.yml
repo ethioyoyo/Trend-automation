@@ -1,15 +1,7 @@
 name: TMAS Scan (Reusable)
 
 on:
-  workflow_call:
-    inputs:
-      region:
-        required: false
-        type: string
-        default: 'us-east-1'
-    secrets:
-      TMAS_API_KEY:
-        required: true
+  push:
 
 permissions:
   contents: read
@@ -33,6 +25,6 @@ jobs:
           malwareScan: false
           secretsScan: true
           artifact: dir:./repo-name
-          additionalArgs: --region=${{ inputs.region }}
+          additionalArgs: --region=us-east-1
           tmasApiKey: ${{ secrets.TMAS_API_KEY }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
